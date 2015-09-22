@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd"
+		profile="mysql">
+
+
+<!-- MySQL beans -->
+<!-- Auto-Wire Injection -->
+<!-- DataSource 설정 -->
+<!-- DriverManagerDataSource는 ConnectionPool기능은 없음 -->
+<!-- property의 name은 setter함수이름 -->
+<!-- <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"> -->
+<beans profile="mysql">
+<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+	<property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+	<property name="url" value="jdbc:mysql://localhost:3306/world"/>
+	<property name="username">
+		<value>world</value>
+	</property>
+	<property name="password">
+		<value>1234</value>
+	</property>
+	<property name="maxActive" value="10"/>
+	<property name="maxWait" value="-1"/>
+</bean>
+
+<!-- <import resource="beans_dao.xml"/> -->
+
+</beans>
+
+</beans>

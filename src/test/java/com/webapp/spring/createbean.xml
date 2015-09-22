@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+<!-- factory-method="newInstance":default생성방법인 new로 생성하지 말고 static method newInstance로 객체 생성하라 -->
+<bean id="cityDao" class="com.webapp.spring.CityDao" 
+				   factory-method="newInstance">
+<!-- 	<constructor-arg> -->
+<!-- 	<value>111</value>	 -->
+<!-- 	</constructor-arg> -->
+<!-- 	<constructor-arg value="111"/> -->
+</bean>
+
+
+<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+<!-- <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"> -->
+	<property name="driverClassName" value="oracle.jdbc.OracleDriver"/>
+	<property name="url" value="jdbc:oracle:thin:@localhost:1521:xe"/>
+	<property name="username">
+		<value>scott</value>
+	</property>
+	<property name="password">
+		<value>tiger</value>
+	</property>
+	<property name="maxActive" value="10"/>
+	<property name="maxWait" value="-1"/>
+</bean>
+
+<!-- Mybatis: Spring연계모듈,datqaSource는 Mybatis environment가 아니라 Spring것을 사용해야 -->
+<!-- SqlSessionFactoryBean Interface 구현  -->
+<bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+	<property name="configLocation" value="mybatis/mybatis_config.xml"/>
+	<property name="dataSource" ref="dataSource"/>
+	<!-- Mapper 설정 <property name="mapperLocations"></property> -->
+</bean>
+
+<!-- SqlSessionTemplate: Spring Transaction으로, Spring Exception으로 변환 처리. -->
+<!-- SqlSessionTemplate설정도 JdbcTemplate처럼 설정 -->
+<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+	<constructor-arg ref="sqlSessionFactoryBean"/>
+</bean>
+
+
+<!-- FactoryBean을 구현한 bean은 객체생성할때 Spring이 SqlSessionFactory getObject()로 객체 생성 특별 취급  -->
+<!-- MyFactoryBean의 Type은 MyFactoryBean의 getObject()로 ReturnType되는SqlSessionFactory  -->
+
+<!-- <bean id="myFactoryBean" class="com.webapp.spring.MyFactoryBean"> -->
+
+<!-- </bean> -->
+
+</beans>

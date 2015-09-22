@@ -1,0 +1,12 @@
+{
+	"email" : "xxx@webapp.com",
+	"password" : "1234",
+	"name" : "홍길동",
+	"gender" : "female",
+	"hobby" : ["programming", "reading", "xxx"],
+	"comment" : "열공하세요", 
+	"reception" : true
+}
+
+
+

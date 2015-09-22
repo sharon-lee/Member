@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- namespace는 java의 package rule과 같도록 가상의 class의 fullname 지정 -->
+<!-- Interface의 Class name: Mapper Interface와 동일한 이름 -->
+<mapper namespace="com.webapp.mapper.MemberMapper"> 
+
+<!-- MemberMapper안에는 Query문들이 정의 -->
+  <!-- resulttype(return type)은 Member로 자동 Mapping - result mapping id와 이름이 같으면 무조건 결과값을 Mybatis가 자동으로 넣어줌 -->
+  <!-- result를 Customize할때는 resultMap으로 result mapping, Member의 property로 정의 -->
+  <!-- resultType="com.webapp.model.Member"  jdbcType="Date" typeAlias는 config file에서 정의 -->
+  <resultMap type="Member" id="memberResultMap">
+  	<id property="id" column="id"/>
+  	<id property="email" column="email"/>
+  	<result property="password" column="password"/>
+  	<result property="name" column="name"/>
+  	<result property="regdate" column="regdate"/>
+  </resultMap>
+  
+  <!-- sql 조각을 합칠때 사용 -->
+  <sql id="member">
+  	select 	id, 
+  			email, 
+  			password, 
+  			name, regdate 
+  		from member  
+  </sql>
+  
+  <select id="selectAll" 
+  		  resultMap="memberResultMap">
+  		  
+  	<include refid="member"/>
+  </select>
+  
+  
+  <!-- List<Member> select(Map<String, Object> index) -->
+  <!-- Mybatis는 DB Connection을 보고 databaseId에 따라 DB구분 처리 -->
+  <!-- default order는 asc ascending -->
+  <select 	id="select" 
+  			parameterType="hashmap" 
+  			resultMap="memberResultMap" databaseId="oracle">
+	  select outer.rn,
+		   outer.id,
+	       outer.email,
+	       outer.password,
+	       outer.name,
+	       outer.regdate
+	  from (select  rownum rn, inner.*
+	  	      from (select	m.*
+	                  from	member m
+	                 order  by m.id desc
+		           ) inner 
+	       ) outer
+	 where outer.rn &gt;= #{firstItem}
+	   and outer.rn &lt;= #{lastItem}
+  </select>
+  
+  <select 	id="select" 
+  			parameterType="hashmap" 
+  			resultMap="memberResultMap" databaseId="mysql">
+  		<include refid="member"/>
+  		order by id desc
+  		limit #{offset}, #{count}
+  		
+  </select>
+  <!-- hashmap으로 들어올때 offset, count를 파라미터로 넘겨줘야 -->  			
+  			<!-- #{firstItem}
+  			#{lastItem}
+  			
+  			limit start, length
+  			limit offset, count -->
+
+<!-- MySQL: start:offset으로 1부터 시작, length:offset으로부터의 count갯수 -->
+  
+  <!-- query:id는 dao의 method -->
+  <!-- where 조건은 EL처럼 #{ }:named parameter:placehold에 이름을 붙인 경우 나중에 Binding된다.  -->  
+  <!-- selectById -->
+  <select id="selectById" 
+  		  parameterType="int"
+  		  resultMap="memberResultMap">
+  		  
+  	<include refid="member"/>
+  		where id = #{id}
+  </select>
+  <!-- select는 method. select id as idxxx는 id rename하지만 id는 integer 0으로 출력  -->
+  
+  <!-- selectByEmail -->
+    <select id="selectByEmail" 
+  		  parameterType="string"
+  		  resultMap="memberResultMap">
+  		  
+  	<include refid="member"/>
+  		where email = #{email}
+  </select>
+  
+  
+  <!-- selectTotalCount -->
+  <select id="selectTotalCount" resultType="int">
+	  select count(*) from member
+  </select>
+  
+  
+<!-- MyBatis : 채번테이블 사용 parameter binding-->  
+  <insert id="insertGenerator" parameterType="Member">
+	insert into member
+	(
+		id, 
+		email,
+		password,
+		name,
+		regdate
+	)
+	values
+	(
+		#{id},
+		#{email},
+		#{password},
+		#{name},
+		#{regdate}
+	)
+  </insert>
+  
+  
+  <!-- Oracle Sequence values는Member의 Property값들이 Deferred EL형식으로 자동화 (값을 넣어주어야)-->
+  <!-- Sequence 형태(별도의 채번테이블형식) : Oracle Sequence를 사용하는 경우는 selectKey로 정의 -->
+  <!-- Spring JDBC(SpringMemberDao) DB에 따라 Data Source를 보고 databaseId="oracle"/"mysql"하나만 활성화 되어야 parameterType="com.webapp.model.Member" -->
+  <insert id="insert" parameterType="Member" databaseId="oracle">
+   	<selectKey keyProperty="id" resultType="int" order="BEFORE">
+  		select member_id_seq.nextval from dual  
+  	</selectKey> 
+	insert into member
+	(
+		id, 
+		email,
+		password,
+		name,
+		regdate
+	)
+	values
+	(
+		#{id},
+		#{email},
+		#{password},
+		#{name},
+		#{regdate}
+	)
+  </insert>
+  
+  <!-- MySQL은 insert시에 자동으로 Auto-increment를 지원-별도의 statement로 처리 -->
+  <!-- 발급받은 id를 사용할경우:Mybatis는 insert시 Statement.RETURN_GENERATED_KEYS처럼 option을 주어 가져옴 -->
+  <!-- keyProperty="id"을 읽어와서 keyColumn="id" DB의 member id에 저장 -->
+  <insert id="insert" 
+  		  parameterType="Member" 
+   		  useGeneratedKeys="true"
+   		  keyProperty="id" keyColumn="id" databaseId="mysql">
+	insert into member
+	(
+		email,
+		password,
+		name,
+		regdate
+	)
+	values
+	(
+		#{email},
+		#{password},
+		#{name},
+		#{regdate}
+	)
+  </insert>
+  
+
+<!-- <update id="update" parameterType="com.webapp.model.Member"> -->
+<!-- update member table update-해당되는 것만 update하도록 동적Sql로 Dynamic하게 변경해야-이경우는 고정 -->
+<!-- 
+<update id="update" parameterType="Member">
+	update 	member
+	   set 	email 	= #{email},
+			password= #{password},
+			name 	= #{name},
+			regdate = #{regdate}
+	where	id 		= #{id}
+</update>
+ -->
+<!-- update member table update-해당되는 것만 update하도록 동적으로 변경:Mybatis는 null값에 따라 조건처리(jstl과 유사) query문 자체를 바꿔 set문이 Dynamic하게 변경 -->
+<!-- set을 동적으로, where도 동적 처리 가능. Mybatis의 set tag가 ,콤마(remove) 자동 처리 해줌 -->
+<!-- 원하는 필드만 Update하도록, set 반드시 한 필드는 not null -->
+<!-- Dynamic SQL Query 동적 SQL -->
+<!-- <update id="update" parameterType="Member">
+	update 	member
+	   <set>
+	   	<if test="email != null">
+	   		email 	= #{email},
+	   	</if>
+	   <if test="password != null">
+	   		password= #{password},
+	   	</if>
+	   	<if test="name != null">
+	   		name 	= #{name},
+	   	</if>
+	   	<if test="regdate != null">
+	   		regdate = #{regdate}
+	   	</if>	   
+	   </set>
+	where	id 		= #{id}
+</update> -->
+
+<!-- Mybatis -->
+<!-- Biz에 따라 email, regdate(등록일)은 수정 못하게 제거/Remove, where에는 primary key가 있어야 -->
+<!-- Member는 Password를 3개월마다 변경하도록 Password만 update하도록 -->
+<update id="update" parameterType="Member">
+	update 	member
+	   <set>
+	   <if test="password != null">
+	   		password= #{password},
+	   	</if>
+	   	<if test="name != null">
+	   		name 	= #{name},
+	   	</if>   
+	   </set>
+	  where	id 		= #{id}
+	    and email	= #{email}
+</update>
+
+<delete id="deleteById" parameterType="int"> <!-- Scala type -->
+	delete from member
+	 where id = #{id}
+</delete>
+
+<delete id="deleteByEmail" parameterType="string"> <!-- Scala type -->
+	delete from member
+	 where email = #{email}
+</delete>
+
+</mapper>

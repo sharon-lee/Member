@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	profile="oracle" xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+
+<!-- Oracle beans -->
+<!-- Auto-Wire Injection -->
+<!-- DataSource 설정 -->
+<!-- DriverManagerDataSource는 ConnectionPool기능은 없음 -->
+<!-- property의 name은 setter함수이름 -->
+<!-- DBCP Connection Pool -->
+<!-- <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"> -->
+<beans profile="oracle">
+<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+	<property name="driverClassName" value="oracle.jdbc.OracleDriver"/>
+	<property name="url" value="jdbc:oracle:thin:@localhost:1521:xe"/>
+	<property name="username">
+		<value>scott</value>
+	</property>
+	<property name="password">
+		<value>tiger</value>
+	</property>
+	<property name="maxActive" value="10"/>
+	<property name="maxWait" value="-1"/>
+</bean>
+
+<import resource="beans_biz.xml"/>
+
+</beans>
+
+</beans>

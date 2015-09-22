@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.1.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+
+<!-- 공통 설정 -->
+
+<!-- Transaction Manager -->
+<!-- Spring(MyBatis, JdbcTemplate) Transaction Manager 구현체 Bean 핵심 설정 -->
+<!-- SqlSessionTemplate은 DataSourceTransactionManager와 연동-Transaction을 시작, 에러 있을때 rollback()등의 처리는 DataSourceTransactionManager가 처리 -->
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	<property name="dataSource" ref="dataSource"/>
+</bean>
+
+<!-- JdbcTemplate 설정 -->
+<!-- setter로 DataSource 조립 -->
+<!-- 주입방법 - primitive type이면 value, 아니면 ref로 주입 -->
+<!-- <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate" autowire="byType"> -->
+<!-- Spring의 Transaction, Exception 처리 -->
+<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">  
+<!-- Auto-Wire: setter를 보고 Type이 맞는 것이 Factory에 있으면 자동으로 설정 --> 
+	<property name="dataSource">
+		<ref bean="dataSource"/> <!-- dataSource주입/조립 -->
+	</property>
+
+</bean>
+
+<!-- Spring에서 설정 -->
+<!-- <bean id="vendorIdProvider" class="org.apache.ibatis.mapping.VendorDatabaseIdProvider">
+	<property name="properties"> setProperties
+		<props>
+			<prop key="Oracle">oracle</prop>
+			<prop key="MySQL">mysql</prop>
+		</props>
+	</property>
+</bean> -->
+
+<!-- MyBatis 설정:String을 Resource객체로 자동 변환 처리 -->
+<!-- Spring이 sqlSessionFactory를 생성 -->
+<!-- <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean" 
+	p:configLocation="mybatis/mybatis_config.xml"
+	p:dataSource-ref="dataSource">
+	<property name="databaseIdProvider" ref="vendorIdProvider"/> ref에서 Bean을 주입	
+</bean> -->
+
+<!-- SqlSessionFactory -->
+<!-- Mybatis 설정을 배제하고 Spring으로 DB관련 설정 -->
+<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean"> 
+	<property name="dataSource" ref="dataSource"/>
+	
+	<property name="mapperLocations">
+		<list>
+			<value>classpath:com/webapp/mapper/MemberMapper.xml</value>
+			<value>classpath:com/webapp/mapper/IdGeneratorMapper.xml</value>
+		</list>
+	</property>
+	<property name="typeAliases">
+		<list>
+			<value>com.webapp.model.Member</value>
+		</list>
+	</property>
+	<!-- ref="vendorIdProvider" ref에서 Bean을 주입 -->
+	<property name="databaseIdProvider">
+		<bean id="vendorIdProvider" class="org.apache.ibatis.mapping.VendorDatabaseIdProvider">
+			<property name="properties"> <!-- setProperties -->
+				<props>
+					<prop key="Oracle">oracle</prop>
+					<prop key="MySQL">mysql</prop>
+				</props>
+			</property>
+		</bean>
+	</property>
+</bean>
+
+<!-- SqlSessionTemplate -->
+<bean  id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+	<constructor-arg ref="sqlSessionFactory"/>
+</bean>
+
+<!-- MemberMapper -->
+<!-- Mapper까지 Spring 설정: Spring연계, p속성 사용 -->
+<bean id="memberMapper" class="org.mybatis.spring.mapper.MapperFactoryBean" 
+	  p:sqlSessionFactory-ref="sqlSessionFactory"
+	  p:mapperInterface="com.webapp.mapper.MemberMapper"/>
+<!-- <bean id="memberMapper" class="org.mybatis.spring.mapper.MapperFactoryBean"> -->
+<!-- 	<property name="configLocation" value="mybatis/mybatis_config.xml"/> -->
+<!-- 	<property name="dataSource" ref="dataSource"/> -->
+<!-- </bean> -->
+
+<!-- IdGeneratorMapper -->
+<!-- Mapper까지 Spring 설정: Spring연계, p속성 사용 -->
+<bean id="idGeneratorMapper" class="org.mybatis.spring.mapper.MapperFactoryBean" 
+	  p:sqlSessionFactory-ref="sqlSessionFactory"
+	  p:mapperInterface="com.webapp.mapper.IdGeneratorMapper"/>
+
+
+<!-- MemberDao 설정 -->
+<!-- Autowire byType: Type이 맞는 것이 Factory에 있으면 자동으로 주입 -->
+<!-- <bean id="memberDao" class="com.webapp.dao.SpringMemberDao" autowire="byType"> -->
+<!-- SpringMemberDao 설정 -->
+<bean id="springMemberDao" class="com.webapp.dao.SpringMemberDao">
+	<property name="template" ref="jdbcTemplate"/>
+	<property name="useGeneratorTable" value="false"/>
+</bean>
+<!-- springMemberDao: IdGenerator Table을 가져오는 부분 추가해야 -->
+
+<!-- MybatisMemberDao 설정 -->
+<bean id="mybatisMemberDao" class="com.webapp.dao.MybatisMemberDao">
+	<property name="memberMapper" ref="memberMapper"/>
+	<property name="idGeneratorMapper" ref="idGeneratorMapper"/>
+	<property name="useGeneratorTable" value="false"/>
+</bean>
+<!-- useGeneratorTable:false이면 id 1000번대, useGeneratorTable:true이면 id 10000번대 -->
+
+<!-- default는 Singleton -->
+<bean id="member" class="com.webapp.model.Member" scope="prototype">
+	<property name="email" value="xxx@oracle.com"/>
+	<property name="password" value="1234"/>
+	<property name="name" value="홍길동"/>
+	<property name="regdate" value="2015/09/11 12:30:10"/>
+</bean>
+
+
+<!-- Transactional Annotation을 인식해서 Proxy를 끼워 넣어 동작 -->
+<tx:annotation-driven transaction-manager="transactionManager" order="10"/>
+
+<!-- Logging기능 On/Off 기능 @Aspect annotation이 있는 bean을 자동 인식 -->
+<aop:aspectj-autoproxy/>
+
+<!-- LoggingAspect를 bean으로 등록 -->
+<bean id="LoggingAspect" class="com.webapp.aspect.LoggingAspect">
+</bean>
+
+
+<!-- ctx.getEnvironment().setActiveProfiles()로 활성화해야:org.springframework.beans.factory.NoSuchBeanDefinitionException:
+No qualifying bean of type [com.webapp.service.MemberListService] is defined   -->
+<!-- AspectJ Weaver가 하는 Weaving 작업 - LogProxyMemberDao  -->
+<!-- <beans profile="spring">
+<bean id="LogProxyMemberDao" class="com.webapp.dao.LogProxyMemberDao">
+	<constructor-arg ref="springMemberDao"/>
+</bean>
+<bean id="memberListService" class="com.webapp.service.MemberListService">
+	<property name="memberDao" ref="LogProxyMemberDao"></property>
+</bean>
+</beans>
+ -->
+
+<!-- <bean id="LogProxyMemberDao" class="com.webapp.dao.LogProxyMemberDao">
+	<constructor-arg ref="mybatisMemberDao"/>
+</bean>
+	
+<bean id="memberListService" class="com.webapp.service.MemberListService">
+	<property name="memberDao" ref="LogProxyMemberDao"></property>
+</bean> -->
+
+
+</beans>

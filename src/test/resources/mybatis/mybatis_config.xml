@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd" >
+<configuration>
+<typeAliases>
+<typeAlias type="com.webapp.model.Member" alias="Member"/>
+
+</typeAliases>
+
+ <environments default="oracle">
+<!--   <environments default="mysql"> -->
+    <environment id="oracle">
+      <transactionManager type="JDBC"/>
+      <dataSource type="POOLED">
+      	<property name="driver" value="oracle.jdbc.OracleDriver"/>
+      	<property name="url" value="jdbc:oracle:thin:@localhost:1521:xe"/>
+      	<property name="username" value="scott"/>
+      	<property name="password" value="tiger"/>
+      </dataSource>
+    </environment>
+    <environment id="mysql">
+      <transactionManager type="JDBC"/>
+      <dataSource type="POOLED">
+      	<property name="driver" value="com.mysql.jdbc.Driver"/>
+      	<property name="url" value="jdbc:mysql://localhost:3306/world"/>
+      	<property name="username" value="world"/>
+      	<property name="password" value="1234"/>
+      </dataSource>
+    </environment>
+  </environments>
+  
+  <!-- 활성화할 DB 특성 기술:ProductName Mapper에는 value로 지칭  -->
+  <databaseIdProvider type="DB_VENDOR">
+  	<property name="Oracle" value="oracle"/>
+  	<property name="MySQL" value="mysql"/>
+  </databaseIdProvider>
+  
+<!-- beans.xml에서 합쳐짐: factory oracle/mysql중 하나만 활성화 - 배타적, 두개다 활성화하려면 factory를 두개 만들어야 -->
+<!-- Mapper는 Dao로 간주. resource는 Mapper File을 기술 -->
+  <mappers>
+    <mapper resource="com/webapp/mapper/MemberMapper.xml"/>
+    <mapper resource="com/webapp/mapper/IdGeneratorMapper.xml"/>
+  </mappers>
+  
+</configuration>
