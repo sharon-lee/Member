@@ -133,7 +133,7 @@
 <tx:annotation-driven transaction-manager="transactionManager" order="10"/>
 
 <!-- Logging기능 On/Off 기능 @Aspect annotation이 있는 bean을 자동 인식 -->
-<aop:aspectj-autoproxy/>
+<aop:aspectj-autoproxy proxy-target-class="true"/>
 
 <!-- LoggingAspect를 bean으로 등록 -->
 <bean id="LoggingAspect" class="com.webapp.aspect.LoggingAspect">
